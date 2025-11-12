@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import YandexMap from '@/components/YandexMap';
 
 interface Equipment {
   id: number;
@@ -319,41 +320,14 @@ export default function Index() {
           )}
 
           {activeTab === 'map' && (
-            <div className="relative h-[600px] bg-muted rounded-2xl overflow-hidden border-2 animate-fade-in">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5" />
-              
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-10">
-                <div className="text-6xl mb-4">🗺️</div>
-                <h3 className="font-heading text-2xl font-bold mb-2">Интерактивная карта</h3>
-                <p className="text-muted-foreground">
-                  Здесь будет отображаться карта с доступной техникой
-                </p>
-              </div>
-
-              <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-3 z-20">
-                {equipmentData.filter(eq => eq.available).map((equipment) => (
-                  <Card 
-                    key={equipment.id}
-                    className="flex items-center gap-3 p-3 hover:shadow-xl transition-all hover:scale-105 cursor-pointer bg-background/95 backdrop-blur"
-                    onClick={() => {
-                      setSelectedEquipment(equipment);
-                      setIsOrderDialogOpen(true);
-                    }}
-                  >
-                    <div className="text-3xl">{equipment.image}</div>
-                    <div>
-                      <div className="font-semibold text-sm">{equipment.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Icon name="MapPin" className="h-3 w-3" />
-                        {equipment.location.split(',')[0]}
-                      </div>
-                    </div>
-                    <div className="ml-auto font-bold text-primary">
-                      {equipment.price.toLocaleString()} ₽
-                    </div>
-                  </Card>
-                ))}
-              </div>
+            <div className="relative h-[600px] animate-fade-in">
+              <YandexMap 
+                equipment={equipmentData}
+                onEquipmentSelect={(equipment) => {
+                  setSelectedEquipment(equipment);
+                  setIsOrderDialogOpen(true);
+                }}
+              />
             </div>
           )}
         </div>
