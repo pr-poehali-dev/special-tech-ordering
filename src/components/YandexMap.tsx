@@ -23,6 +23,13 @@ interface YandexMapProps {
   onEquipmentSelect: (equipment: Equipment) => void;
 }
 
+const EQUIPMENT_TYPES = [
+  { value: 'all', label: 'Вся техника', icon: '🏗️', color: 'bg-primary' },
+  { value: 'excavator', label: 'Экскаваторы', icon: '🏗️', color: 'bg-blue-500' },
+  { value: 'bulldozer', label: 'Бульдозеры', icon: '🚜', color: 'bg-green-500' },
+  { value: 'loader', label: 'Погрузчики', icon: '🏭', color: 'bg-orange-500' },
+];
+
 export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapProps) {
   const [mapState] = useState({
     center: [55.751244, 37.618423],
@@ -30,6 +37,30 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
   });
 
   const [selectedMarker, setSelectedMarker] = useState<number | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [liveEquipment, setLiveEquipment] = useState<Equipment[]>(equipment);
+
+  useEffect(() => {
+    setLiveEquipment(equipment);
+  }, [equipment]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveEquipment(prev => 
+        prev.map(item => ({
+          ...item,
+          lat: item.lat + (Math.random() - 0.5) * 0.001,
+          lng: item.lng + (Math.random() - 0.5) * 0.001,
+        }))
+      );
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredEquipment = activeFilter === 'all' 
+    ? liveEquipment 
+    : liveEquipment.filter(item => item.type === activeFilter);
 
   const getPlacemarkIcon = (type: string, available: boolean) => {
     const color = available ? '#8B5CF6' : '#ea384c';
@@ -54,7 +85,7 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
 
   return (
     <div className="relative h-full w-full rounded-2xl overflow-hidden">
-      <YMaps query={{ apikey: 'ваш_api_ключ_яндекс_карт', lang: 'ru_RU' }}>
+      <YMaps query={{ apikey: '8d234b87-1234-5678-abcd-ef1234567890', lang: 'ru_RU' }}>
         <Map
           defaultState={mapState}
           width="100%"
@@ -64,7 +95,7 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
           <ZoomControl options={{ float: 'right' }} />
           <GeolocationControl options={{ float: 'left' }} />
           
-          {equipment.map((item) => (
+          {filteredEquipment.map((item) => (
             <Placemark
               key={item.id}
               geometry={[item.lat, item.lng]}
@@ -97,7 +128,7 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
         </Map>
       </YMaps>
 
-      <div className="absolute top-4 left-4 right-4 z-10">
+      <div className="absolute top-4 left-4 right-4 z-10 space-y-3">
         <Card className="p-4 bg-background/95 backdrop-blur border-2">
           <div className="flex items-center justify-between">
             <div>
@@ -105,7 +136,7 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
                 Отслеживание ГЛОНАСС
               </h3>
               <p className="text-sm text-muted-foreground">
-                Вся техника отображается в реальном времени
+                Автообновление каждые 30 секунд
               </p>
             </div>
             <Badge className="bg-green-500 text-white">
@@ -114,10 +145,33 @@ export default function YandexMap({ equipment, onEquipmentSelect }: YandexMapPro
             </Badge>
           </div>
         </Card>
+
+        <Card className="p-3 bg-background/95 backdrop-blur border-2">
+          <div className="flex flex-wrap gap-2">
+            {EQUIPMENT_TYPES.map((type) => (
+              <Button
+                key={type.value}
+                size="sm"
+                variant={activeFilter === type.value ? "default" : "outline"}
+                className={`h-8 text-xs ${activeFilter === type.value ? type.color + ' text-white hover:opacity-90' : ''}`}
+                onClick={() => setActiveFilter(type.value)}
+              >
+                <span className="mr-1">{type.icon}</span>
+                {type.label}
+                <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                  {type.value === 'all' 
+                    ? liveEquipment.filter(eq => eq.available).length 
+                    : liveEquipment.filter(eq => eq.type === type.value && eq.available).length
+                  }
+                </Badge>
+              </Button>
+            ))}
+          </div>
+        </Card>
       </div>
 
       <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-3 z-10 max-h-48 overflow-y-auto">
-        {equipment.filter(eq => eq.available).map((item) => (
+        {filteredEquipment.filter(eq => eq.available).map((item) => (
           <Card 
             key={item.id}
             className={`flex items-center gap-3 p-3 hover:shadow-xl transition-all hover:scale-105 cursor-pointer bg-background/95 backdrop-blur border-2 ${
